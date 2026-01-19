@@ -52,6 +52,8 @@ android {
 
 dependencies {
 
+    implementation(project(":data:unsplash-api"))
+
     // core dependencies
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
