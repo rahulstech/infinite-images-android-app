@@ -52,6 +52,10 @@ dependencies {
     api(libs.retrofit)
     implementation(libs.retrofit.converter.gson)
 
+    // paging
+    api(libs.paging.runtime)
+    api(libs.paging.runtime.ktx)
+
     // testing
     testImplementation(libs.junit)
     implementation(kotlin("stdlib-jdk8"))

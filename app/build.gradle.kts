@@ -73,6 +73,9 @@ dependencies {
     debugImplementation(libs.androidx.compose.ui.tooling)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
 
+    // paging
+    implementation(libs.paging.compose)
+
     // testing
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)

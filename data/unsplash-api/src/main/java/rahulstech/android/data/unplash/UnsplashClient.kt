@@ -51,6 +51,6 @@ class UnsplashClient() {
         .client(createOkHttpClient())
         .build()
 
-    val api: UnsplashService = retrofit.create(UnsplashService::class.java)
+    val service: UnsplashService = retrofit.create(UnsplashService::class.java)
 }
 
