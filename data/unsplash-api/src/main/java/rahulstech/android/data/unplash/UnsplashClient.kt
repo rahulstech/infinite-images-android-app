@@ -17,7 +17,7 @@ class UnsplashClient() {
     fun createOkHttpClient(): OkHttpClient {
         val builder = OkHttpClient.Builder()
             .addInterceptor(requestHeadersInterceptor())
-            .addInterceptor(debugResponseInterception())
+            .addNetworkInterceptor(debugResponseInterception())
         return builder.build()
     }
 
