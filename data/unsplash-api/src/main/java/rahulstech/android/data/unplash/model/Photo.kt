@@ -15,6 +15,7 @@ data class PhotoDto(
     val color: String,
     val blur_hash: String,
     val description: String?,
+    val alt_description: String?,
     val urls: PhotoUrlDto,
     val links: PhotoLinkDto,
 )

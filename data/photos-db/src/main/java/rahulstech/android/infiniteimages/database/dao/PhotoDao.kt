@@ -1,0 +1,4 @@
+package rahulstech.android.infiniteimages.database.dao
+
+interface PhotoDao {
+}
