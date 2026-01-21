@@ -1,11 +1,10 @@
 plugins {
     alias(libs.plugins.android.library)
     alias(libs.plugins.kotlin.android)
-    alias(libs.plugins.ksp)
 }
 
 android {
-    namespace = "rahulstech.android.infiniteimages.database"
+    namespace = "rahulstech.android.infiniteimages.photosrepo"
     compileSdk = 36
 
     defaultConfig {
@@ -28,30 +27,17 @@ android {
         sourceCompatibility = JavaVersion.VERSION_21
         targetCompatibility = JavaVersion.VERSION_21
     }
-
-    kotlin {
-        sourceSets.all {
-            languageSettings {
-                languageVersion = "2.0"
-            }
-        }
-    }
-
-    ksp {
-        arg("room.schemaLocation", "$projectDir/schemas")
-        arg("room.incremental", "true")
-        arg("room.expandProjection", "true")
+    kotlinOptions {
+        jvmTarget = "21"
     }
 }
 
 dependencies {
 
-    // room
-    api(libs.room.runtime)
-    api(libs.room.ktx)
-    implementation(libs.room.paging)
-    ksp(libs.room.compiler)
+    implementation(project(":data:unsplash-api"))
+    implementation(project(":data:photos-db"))
 
+    // testing
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)

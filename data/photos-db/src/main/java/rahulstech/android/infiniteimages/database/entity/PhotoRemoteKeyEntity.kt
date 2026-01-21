@@ -16,15 +16,7 @@ import androidx.room.PrimaryKey
  * if per page size is changed then all rows in this table also deleted.
  * so, there is no change of inconsistency.
  */
-@Entity(
-    tableName = "photo_remote_keys",
-    foreignKeys = [
-        ForeignKey(entity = PhotoEntity::class, parentColumns = ["globalId"], childColumns = ["globalId"])
-    ],
-    indices = [
-        Index(name = "index_photo_remote_keys_globalId", value = ["globalId"])
-    ]
-)
+@Entity(tableName = "photo_remote_keys")
 data class PhotoRemoteKeyEntity(
     @PrimaryKey
     val globalId: String, // id given by api

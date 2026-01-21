@@ -14,7 +14,7 @@ interface PhotoRemoteKeyDao {
     suspend fun insertMultipleKeys(keys: List<PhotoRemoteKeyEntity>)
 
     @Query("SELECT * FROM `photo_remote_keys` WHERE `globalId` = :globalId")
-    fun getKeyById(globalId: String): PhotoRemoteKeyEntity?
+    suspend fun getKeyById(globalId: String): PhotoRemoteKeyEntity?
 
     @Transaction
     @Query("DELETE FROM `photo_remote_keys`")

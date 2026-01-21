@@ -37,22 +37,11 @@ android {
     buildFeatures {
         compose = true
     }
-    kotlin {
-        // jvmToolchain must match the java versions in compileOptions{}
-        jvmToolchain(21)
-        // add the following so don't need to add @OptIn(ExperimentalMaterial3Api::class)
-        compilerOptions {
-            freeCompilerArgs.addAll(
-                "-opt-in=androidx.compose.material3.ExperimentalMaterial3Api",
-                "-opt-in=kotlinx.coroutines.ExperimentalCoroutinesApi"
-            )
-        }
-    }
 }
 
 dependencies {
 
-    implementation(project(":data:unsplash-api"))
+    implementation(project(":domain:photos-repository"))
 
     // core dependencies
     implementation(libs.androidx.core.ktx)

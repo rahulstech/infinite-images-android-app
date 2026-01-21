@@ -2,7 +2,7 @@
   "formatVersion": 1,
   "database": {
     "version": 1,
-    "identityHash": "a7a8f48b1bba6abc5741fbcd11b2cd58",
+    "identityHash": "1ac6a2c4d1e021b22ba83f8d40cfc5e8",
     "entities": [
       {
         "tableName": "photos",
@@ -68,7 +68,7 @@
       },
       {
         "tableName": "photo_remote_keys",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`globalId` TEXT NOT NULL, `prevPage` INTEGER, `nextPage` INTEGER, `lastModified` INTEGER NOT NULL, PRIMARY KEY(`globalId`), FOREIGN KEY(`globalId`) REFERENCES `photos`(`globalId`) ON UPDATE NO ACTION ON DELETE NO ACTION )",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`globalId` TEXT NOT NULL, `prevPage` INTEGER, `nextPage` INTEGER, `lastModified` INTEGER NOT NULL, PRIMARY KEY(`globalId`))",
         "fields": [
           {
             "fieldPath": "globalId",
@@ -101,36 +101,14 @@
             "globalId"
           ]
         },
-        "indices": [
-          {
-            "name": "index_photo_remote_keys_globalId",
-            "unique": false,
-            "columnNames": [
-              "globalId"
-            ],
-            "orders": [],
-            "createSql": "CREATE INDEX IF NOT EXISTS `index_photo_remote_keys_globalId` ON `${TABLE_NAME}` (`globalId`)"
-          }
-        ],
-        "foreignKeys": [
-          {
-            "table": "photos",
-            "onDelete": "NO ACTION",
-            "onUpdate": "NO ACTION",
-            "columns": [
-              "globalId"
-            ],
-            "referencedColumns": [
-              "globalId"
-            ]
-          }
-        ]
+        "indices": [],
+        "foreignKeys": []
       }
     ],
     "views": [],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'a7a8f48b1bba6abc5741fbcd11b2cd58')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '1ac6a2c4d1e021b22ba83f8d40cfc5e8')"
     ]
   }
 }

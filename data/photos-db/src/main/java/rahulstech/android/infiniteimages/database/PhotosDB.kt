@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
+import androidx.room.withTransaction
 import rahulstech.android.infiniteimages.database.dao.PhotoDao
 import rahulstech.android.infiniteimages.database.dao.PhotoRemoteKeyDao
 import rahulstech.android.infiniteimages.database.entity.PhotoEntity
@@ -36,4 +37,6 @@ abstract class PhotosDB: RoomDatabase() {
     abstract val photoDao: PhotoDao
 
     abstract val photoRemoteKeyDao: PhotoRemoteKeyDao
+
+
 }

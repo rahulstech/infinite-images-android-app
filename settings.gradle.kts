@@ -24,3 +24,4 @@ rootProject.name = "InfiniteImages"
 include(":app")
 include(":data:unsplash-api")
 include(":data:photos-db")
+include(":domain:photos-repository")

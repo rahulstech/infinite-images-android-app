@@ -1,6 +1,8 @@
 package rahulstech.android.infiniteimages
 
+import android.app.Application
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -29,40 +31,25 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.core.graphics.drawable.toDrawable
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import coil.request.ImageRequest
-import rahulstech.android.data.unplash.UnsplashClient
-import rahulstech.android.data.unplash.model.PhotoDto
 import rahulstech.android.infiniteimages.ui.theme.InfiniteImagesTheme
 import androidx.core.graphics.toColorInt
+import androidx.lifecycle.AndroidViewModel
 import androidx.paging.LoadState
-import androidx.paging.Pager
-import androidx.paging.PagingConfig
 import androidx.paging.cachedIn
 import androidx.paging.compose.collectAsLazyPagingItems
 import coil.compose.AsyncImage
-import rahulstech.android.data.unplash.paging.PhotosPagingSource
+import rahulstech.android.infiniteimages.photosrepo.PhotosRepository
+import rahulstech.android.infiniteimages.photosrepo.model.Photo
 
 private const val TAG = "MainActivity"
 
-private const val THRESHOLD_LOAD_MORE = 5
+class MainViewModel(app: Application): AndroidViewModel(app) {
 
-private const val PAGE_SIZE = 20
+    private val repo: PhotosRepository = PhotosRepository(app)
 
-class MainViewModel: ViewModel() {
-
-    private val service = UnsplashClient().service
-
-    val photos = Pager(
-        config = PagingConfig(
-            pageSize = PAGE_SIZE,
-            prefetchDistance = THRESHOLD_LOAD_MORE
-        ),
-        pagingSourceFactory = { PhotosPagingSource(service) }
-    )
-        .flow
-        .cachedIn(viewModelScope)
+    val photos = repo.getPhotos().cachedIn(viewModelScope)
 }
 
 class MainActivity : ComponentActivity() {
@@ -110,11 +97,18 @@ fun PhotosGrid(viewmodel: MainViewModel) {
                     photos[index]?.let {  PhotoGridItem(it) }
                 }
             }
+            is LoadState.Error -> {
+                Log.e(TAG,"refresh error", (loadState.refresh as LoadState.Error).error)
+            }
             else -> {}
         }
 
+        if (loadState.append is LoadState.Error) {
+            Log.e(TAG,"refresh error", (loadState.append as LoadState.Error).error)
+        }
+
         if (loadState.refreshing || loadState.appending) {
-            items(count = PAGE_SIZE) {
+            items(count = if (loadState.refreshing) 30 else 5) {
                 PhotoGridItemShimmer()
             }
         }
@@ -130,11 +124,11 @@ fun PhotoGridItemShimmer() {
 }
 
 @Composable
-fun PhotoGridItem(photo: PhotoDto) {
+fun PhotoGridItem(photo: Photo) {
     val context = LocalContext.current
-    val request = remember(photo.urls.thumb) {
+    val request = remember(photo.thumbnail) {
         ImageRequest.Builder(context)
-            .data(photo.urls.thumb)
+            .data(photo.thumbnail)
             .placeholder(Color(photo.color.toColorInt()).toArgb().toDrawable())
             .build()
     }
