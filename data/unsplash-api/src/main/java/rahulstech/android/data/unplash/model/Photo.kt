@@ -6,8 +6,7 @@ data class PhotoUrlDto(
 )
 
 data class PhotoLinkDto(
-    val self: String,
-    val download: String,
+    val download_location: String,
 )
 
 data class PhotoDto(
