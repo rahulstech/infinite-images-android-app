@@ -1,0 +1,136 @@
+{
+  "formatVersion": 1,
+  "database": {
+    "version": 1,
+    "identityHash": "a7a8f48b1bba6abc5741fbcd11b2cd58",
+    "entities": [
+      {
+        "tableName": "photos",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `globalId` TEXT NOT NULL, `color` TEXT NOT NULL, `blurHash` TEXT NOT NULL, `description` TEXT NOT NULL, `thumbnailUrl` TEXT NOT NULL, `fullImageUrl` TEXT NOT NULL, `downloadLink` TEXT NOT NULL)",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "globalId",
+            "columnName": "globalId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "color",
+            "columnName": "color",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "blurHash",
+            "columnName": "blurHash",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "description",
+            "columnName": "description",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "thumbnailUrl",
+            "columnName": "thumbnailUrl",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "fullImageUrl",
+            "columnName": "fullImageUrl",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "downloadLink",
+            "columnName": "downloadLink",
+            "affinity": "TEXT",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [],
+        "foreignKeys": []
+      },
+      {
+        "tableName": "photo_remote_keys",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`globalId` TEXT NOT NULL, `prevPage` INTEGER, `nextPage` INTEGER, `lastModified` INTEGER NOT NULL, PRIMARY KEY(`globalId`), FOREIGN KEY(`globalId`) REFERENCES `photos`(`globalId`) ON UPDATE NO ACTION ON DELETE NO ACTION )",
+        "fields": [
+          {
+            "fieldPath": "globalId",
+            "columnName": "globalId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "prevPage",
+            "columnName": "prevPage",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "nextPage",
+            "columnName": "nextPage",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "lastModified",
+            "columnName": "lastModified",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "globalId"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_photo_remote_keys_globalId",
+            "unique": false,
+            "columnNames": [
+              "globalId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_photo_remote_keys_globalId` ON `${TABLE_NAME}` (`globalId`)"
+          }
+        ],
+        "foreignKeys": [
+          {
+            "table": "photos",
+            "onDelete": "NO ACTION",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "globalId"
+            ],
+            "referencedColumns": [
+              "globalId"
+            ]
+          }
+        ]
+      }
+    ],
+    "views": [],
+    "setupQueries": [
+      "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'a7a8f48b1bba6abc5741fbcd11b2cd58')"
+    ]
+  }
+}

@@ -23,3 +23,4 @@ dependencyResolutionManagement {
 rootProject.name = "InfiniteImages"
 include(":app")
 include(":data:unsplash-api")
+include(":data:photos-db")

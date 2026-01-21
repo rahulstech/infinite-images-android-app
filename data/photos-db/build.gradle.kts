@@ -1,6 +1,7 @@
 plugins {
     alias(libs.plugins.android.library)
     alias(libs.plugins.kotlin.android)
+    alias(libs.plugins.ksp)
 }
 
 android {
@@ -24,18 +25,36 @@ android {
         }
     }
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
+        sourceCompatibility = JavaVersion.VERSION_21
+        targetCompatibility = JavaVersion.VERSION_21
     }
     kotlinOptions {
-        jvmTarget = "11"
+        jvmTarget = "21"
+    }
+
+    kotlin {
+        sourceSets.all {
+            languageSettings {
+                languageVersion = "2.0"
+            }
+        }
+    }
+
+    ksp {
+        arg("room.schemaLocation", "$projectDir/schemas")
+        arg("room.incremental", "true")
+        arg("room.expandProjection", "true")
     }
 }
 
 dependencies {
-    implementation(libs.androidx.core.ktx)
-    implementation(libs.androidx.appcompat)
-    implementation(libs.material)
+
+    // room
+    api(libs.room.runtime)
+    implementation(libs.room.ktx)
+    implementation(libs.room.paging)
+    ksp(libs.room.compiler)
+
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
