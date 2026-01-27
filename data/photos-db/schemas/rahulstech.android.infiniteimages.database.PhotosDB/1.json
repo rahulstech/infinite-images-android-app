@@ -2,7 +2,7 @@
   "formatVersion": 1,
   "database": {
     "version": 1,
-    "identityHash": "1ac6a2c4d1e021b22ba83f8d40cfc5e8",
+    "identityHash": "f7f79d5201c0b5a85d403448deef4e57",
     "entities": [
       {
         "tableName": "photos",
@@ -68,7 +68,7 @@
       },
       {
         "tableName": "photo_remote_keys",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`globalId` TEXT NOT NULL, `prevPage` INTEGER, `nextPage` INTEGER, `lastModified` INTEGER NOT NULL, PRIMARY KEY(`globalId`))",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`globalId` TEXT NOT NULL, `prevPage` INTEGER, `nextPage` INTEGER, PRIMARY KEY(`globalId`))",
         "fields": [
           {
             "fieldPath": "globalId",
@@ -87,12 +87,6 @@
             "columnName": "nextPage",
             "affinity": "INTEGER",
             "notNull": false
-          },
-          {
-            "fieldPath": "lastModified",
-            "columnName": "lastModified",
-            "affinity": "INTEGER",
-            "notNull": true
           }
         ],
         "primaryKey": {
@@ -108,7 +102,7 @@
     "views": [],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '1ac6a2c4d1e021b22ba83f8d40cfc5e8')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'f7f79d5201c0b5a85d403448deef4e57')"
     ]
   }
 }

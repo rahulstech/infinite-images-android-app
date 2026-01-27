@@ -36,11 +36,16 @@ class UnsplashClient() {
             val res  = it.proceed(it.request())
             if (BuildConfig.DEBUG) {
                 val headers = res.headers()
+                val link = headers["Link"]
                 val limit = headers["X-Ratelimit-Limit"]
                 val remaining = headers["X-Ratelimit-Remaining"]
                 val reset = headers["X-Ratelimit-Reset"]
-                Log.d(TAG,
-                    "url=${it.request().url()}; status=${res.code()}; limit=$limit, remaining=$remaining, reset=$reset")
+
+                Log.i(TAG,"---------- START -----------")
+                Log.i(TAG, "url=${it.request().url()}; status=${res.code()}")
+                Log.i(TAG, "LINK=$link")
+                Log.i(TAG, "limit=$limit, remaining=$remaining, reset=$reset")
+                Log.i(TAG,"---------- END -----------")
             }
             res
         }

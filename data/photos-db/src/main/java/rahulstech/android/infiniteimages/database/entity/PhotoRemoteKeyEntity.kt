@@ -22,5 +22,4 @@ data class PhotoRemoteKeyEntity(
     val globalId: String, // id given by api
     val prevPage: Int?, // for first page prevPage is null
     val nextPage: Int?, // for last page nextPage is null
-    val lastModified: Long = System.currentTimeMillis(), // used to decide cache refresh
 )

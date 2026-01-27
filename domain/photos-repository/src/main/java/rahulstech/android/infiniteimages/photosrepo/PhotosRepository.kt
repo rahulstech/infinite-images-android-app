@@ -5,9 +5,9 @@ import androidx.paging.Pager
 import androidx.paging.PagingConfig
 import androidx.paging.PagingData
 import androidx.paging.map
+import androidx.room.withTransaction
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.mapLatest
 import rahulstech.android.data.unplash.UnsplashClient
 import rahulstech.android.data.unplash.UnsplashService
 import rahulstech.android.infiniteimages.database.PhotosDB
@@ -21,17 +21,35 @@ class PhotosRepository(context: Context) {
 
     private val service: UnsplashService = UnsplashClient().service
 
+    private val repoData = RepositoryData(context)
+
     fun getPhotos(): Flow<PagingData<Photo>> {
         return Pager(
             config = PagingConfig(
                 pageSize = 20,
-                prefetchDistance = 5,
+
+                // initially load photos of size initialLoadSize or its multiple
+                // without this value it may trigger multiple requests on initial load
+                initialLoadSize = 20,
+
+                // default is pageSize, use smaller that pageSize
+                prefetchDistance = 2,
+
                 enablePlaceholders = false
             ),
-            remoteMediator = PhotosRemoteMediator(db, service),
+            remoteMediator = PhotosRemoteMediator(db, service, repoData),
             pagingSourceFactory = { db.photoDao.getPhotos() }
         )
             .flow
             .map { pagingData -> pagingData.map { it.toPhoto() } }
+    }
+
+    suspend fun reset() = db.withTransaction {
+
+        db.photoDao.deleteAllPhotos()
+
+        db.photoRemoteKeyDao.deleteAllKeys()
+
+        repoData.removeLastModifierMillis()
     }
 }

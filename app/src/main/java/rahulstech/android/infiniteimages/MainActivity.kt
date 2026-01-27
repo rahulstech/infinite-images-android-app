@@ -2,7 +2,6 @@ package rahulstech.android.infiniteimages
 
 import android.app.Application
 import android.os.Bundle
-import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -17,7 +16,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
@@ -36,10 +34,10 @@ import coil.request.ImageRequest
 import rahulstech.android.infiniteimages.ui.theme.InfiniteImagesTheme
 import androidx.core.graphics.toColorInt
 import androidx.lifecycle.AndroidViewModel
-import androidx.paging.LoadState
 import androidx.paging.cachedIn
 import androidx.paging.compose.collectAsLazyPagingItems
 import coil.compose.AsyncImage
+import kotlinx.coroutines.launch
 import rahulstech.android.infiniteimages.photosrepo.PhotosRepository
 import rahulstech.android.infiniteimages.photosrepo.model.Photo
 
@@ -50,6 +48,12 @@ class MainViewModel(app: Application): AndroidViewModel(app) {
     private val repo: PhotosRepository = PhotosRepository(app)
 
     val photos = repo.getPhotos().cachedIn(viewModelScope)
+
+    fun refresh() {
+        viewModelScope.launch {
+            repo.reset()
+        }
+    }
 }
 
 class MainActivity : ComponentActivity() {
@@ -77,43 +81,51 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-fun PhotosGrid(viewmodel: MainViewModel) {
-    val photos = viewmodel.photos.collectAsLazyPagingItems()
-    val gridState = rememberLazyGridState()
-
+fun PhotosGrid(viewModel: MainViewModel) {
+    val photos = viewModel.photos.collectAsLazyPagingItems()
 
     LazyVerticalGrid(
         columns = GridCells.Adaptive(240.dp),
         horizontalArrangement = Arrangement.spacedBy(12.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
-        state = gridState
     ) {
-
-        val loadState = photos.loadState
-
-        when(loadState.refresh) {
-            is LoadState.NotLoading -> {
-                items(count = photos.itemCount, key = { index -> photos[index]?.id ?: index }) { index ->
-                    photos[index]?.let {  PhotoGridItem(it) }
-                }
-            }
-            is LoadState.Error -> {
-                Log.e(TAG,"refresh error", (loadState.refresh as LoadState.Error).error)
-            }
-            else -> {}
+        items(
+            count = photos.itemCount,
+            key = { index -> photos[index]?.id ?: index }
+        ) { index ->
+            photos[index]?.let { PhotoGridItem(it) }
         }
 
-        if (loadState.append is LoadState.Error) {
-            Log.e(TAG,"refresh error", (loadState.append as LoadState.Error).error)
-        }
-
-        if (loadState.refreshing || loadState.appending) {
-            items(count = if (loadState.refreshing) 30 else 5) {
-                PhotoGridItemShimmer()
-            }
-        }
+        // Footer load state (append)
+//        when (val append = photos.loadState.append) {
+//            is LoadState.Loading -> {
+//                item(span = { GridItemSpan(maxLineSpan) }) {
+//                    LoadingFooter()
+//                }
+//            }
+//            is LoadState.Error -> {
+//                item(span = { GridItemSpan(maxLineSpan) }) {
+//                    ErrorFooter(
+//                        error = append.error,
+//                        onRetry = { photos.retry() }
+//                    )
+//                }
+//            }
+//            else -> Unit
+//        }
     }
+
+    // Full-screen refresh state (overlay, not structural)
+//    when (val refresh = photos.loadState.refresh) {
+//        is LoadState.Loading -> FullScreenLoader()
+//        is LoadState.Error -> FullScreenError(
+//            error = refresh.error,
+//            onRetry = { photos.retry() }
+//        )
+//        else -> Unit
+//    }
 }
+
 
 @Composable
 fun PhotoGridItemShimmer() {

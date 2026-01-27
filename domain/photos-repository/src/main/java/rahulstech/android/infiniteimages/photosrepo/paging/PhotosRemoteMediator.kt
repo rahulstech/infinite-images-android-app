@@ -1,120 +1,136 @@
 package rahulstech.android.infiniteimages.photosrepo.paging
 
 import android.util.Log
-import androidx.paging.ExperimentalPagingApi
 import androidx.paging.LoadType
 import androidx.paging.PagingState
 import androidx.paging.RemoteMediator
 import androidx.room.withTransaction
 import rahulstech.android.data.unplash.UnsplashService
-import rahulstech.android.data.unplash.model.PhotoDto
 import rahulstech.android.infiniteimages.database.PhotosDB
 import rahulstech.android.infiniteimages.database.entity.PhotoEntity
 import rahulstech.android.infiniteimages.database.entity.PhotoRemoteKeyEntity
 import rahulstech.android.infiniteimages.photosrepo.PhotosRepositoryException
+import rahulstech.android.infiniteimages.photosrepo.RepositoryData
 import rahulstech.android.infiniteimages.photosrepo.model.toPhotoEntity
 import retrofit2.HttpException
 import java.io.IOException
 
-private const val TAG = "PhotosRemoteMediator"
+private const val  TAG = "PhotosRemoteMediator"
 
-@OptIn(ExperimentalPagingApi::class)
 class PhotosRemoteMediator(
     private val db: PhotosDB,
-    private val service: UnsplashService
-): RemoteMediator<Int, PhotoEntity>() {
+    private val service: UnsplashService,
+    private val repoData: RepositoryData
+) : RemoteMediator<Int, PhotoEntity>() {
 
     private val photosDao = db.photoDao
-
     private val photoKeysDao = db.photoRemoteKeyDao
 
-    // load is responsible for loading pages from remote source add saving data into local source with remote keys.
-    // when new Pager created REFRESH load is called. it's load()'s responsibility to decide weather the REFRESH call
-    // actually requires a new remote source call. for example: cache expiry timestamp.
-    // if REFRESH grants fetching remote source then first remove all local data with remote-keys
-    override suspend fun load(loadType: LoadType, state: PagingState<Int, PhotoEntity>): MediatorResult {
-        Log.i(TAG, "loadType=$loadType)")
+    override suspend fun load(
+        loadType: LoadType,
+        state: PagingState<Int, PhotoEntity>
+    ): MediatorResult {
 
-        val pageIndex = when(loadType) {
-            LoadType.REFRESH -> { 1 }
+        val page = when (loadType) {
+
+            LoadType.REFRESH -> {
+
+                if (isFresh()) {
+                    Log.i(TAG, "db content is fresh")
+                    return MediatorResult.Success(false)
+                }
+
+                state.anchorPosition?.let { position ->
+                    state.closestItemToPosition(position)?.let { item ->
+                        photoKeysDao.getKeyById(item.globalId)
+                    }
+                }?.nextPage?.minus(1) ?: 1
+
+            }
 
             LoadType.APPEND -> {
-                val lastItem = state.lastItemOrNull() ?: return MediatorResult.Success(endOfPaginationReached = true)
-                getNextPageIndex(lastItem.globalId) ?: return MediatorResult.Success(endOfPaginationReached = true)
+                val lastItem = state.lastItemOrNull()
+                    ?: return MediatorResult.Success(endOfPaginationReached = false)
+
+                val remoteKey = photoKeysDao.getKeyById(lastItem.globalId)
+                    ?: return MediatorResult.Success(endOfPaginationReached = false)
+
+                remoteKey.nextPage
+                    ?: return MediatorResult.Success(endOfPaginationReached = true)
             }
 
             LoadType.PREPEND -> {
+                // We never load backwards.
                 return MediatorResult.Success(endOfPaginationReached = true)
             }
         }
 
-        try {
-            // TODO: do i need to refetch from api for each loadType == REFRESH?
+        Log.i(TAG, "loadType $loadType pageIndex $page")
 
-            val remotePhotos: List<PhotoDto> = loadRemotePage(pageIndex, 20)
-            val photos: List<PhotoEntity> = remotePhotos.map { it.toPhotoEntity() }
-            val endOfPaginationReached = remotePhotos.isEmpty()
+        return try {
+            val response = service.getPhotos(page,20)
 
-            if (photos.isNotEmpty()) {
-                savePageLocally(
-                    photos,
-                    prevPage = if (pageIndex == 1) null else pageIndex - 1,
-                    nextPage = pageIndex + 1,
-                    deleteOld = loadType == LoadType.REFRESH
-                )
+            if (!response.isSuccessful) {
+                throw HttpException(response)
             }
 
-            return MediatorResult.Success(endOfPaginationReached)
-        }
-        catch (cause: Throwable) {
-            return MediatorResult.Error(cause)
-        }
-    }
+            val networkPhotos = response.body().orEmpty()
+            val endOfPaginationReached = networkPhotos.isEmpty()
 
-    suspend fun getNextPageIndex(globalId: String): Int? {
-        val remoteKey = db.photoRemoteKeyDao.getKeyById(globalId)
-        return remoteKey?.nextPage
-    }
+            db.withTransaction {
 
-    suspend fun loadRemotePage(page: Int, perPage: Int): List<PhotoDto> {
-        try {
-            val res = service.getPhotos(page, perPage)
-            if (res.isSuccessful) {
-                return res.body().orEmpty()
-            } else {
-                throw HttpException(res)
-            }
-        }
-        catch (cause: IOException) {
-            throw PhotosRepositoryException.NetworkException(cause)
-        }
-        catch (cause: HttpException) {
-            throw PhotosRepositoryException.HttpException(cause.code(), cause.message(), cause)
-        }
-        catch (cause: Throwable) {
-            throw PhotosRepositoryException.UnknownException(cause)
-        }
-    }
+                if (loadType == LoadType.REFRESH) {
+                    photoKeysDao.deleteAllKeys()
+                    photosDao.deleteAllPhotos()
+                }
 
-    suspend fun savePageLocally(photos: List<PhotoEntity>, prevPage: Int?, nextPage: Int?, deleteOld: Boolean = false) {
-        Log.i(TAG,"saving ${photos.size} photos locally prevPage = $prevPage nextPage = $nextPage deleteOld = $deleteOld")
-        db.withTransaction {
-            if (deleteOld) {
-                photosDao.deleteAllPhotos()
-                photoKeysDao.deleteAllKeys()
-            }
+                Log.i(TAG, "add ${networkPhotos.size} photos to db and endOfPaginationReached = $endOfPaginationReached")
 
-            photosDao.insertPhotos(photos)
+                val entities = networkPhotos.map { it.toPhotoEntity() }
 
-            photoKeysDao.insertMultipleKeys(
-                photos.map {
+                photosDao.insertPhotos(entities)
+
+                // NOTE: Unsplash API returns a Link header which contains the first, prev, next and last page links
+                // however is not necessary to parse this header to construct the PhotoRemoteKeyEntity entries.
+                val keys = entities.map {
                     PhotoRemoteKeyEntity(
                         globalId = it.globalId,
-                        prevPage = prevPage,
-                        nextPage = nextPage
+                        prevPage = if (page == 1) null else page - 1,
+                        nextPage = if (endOfPaginationReached) null else page + 1
                     )
                 }
-            )
+
+                photoKeysDao.insertMultipleKeys(keys)
+
+                repoData.rememberLastModified()
+            }
+
+            MediatorResult.Success(endOfPaginationReached)
+
+        } catch (cause: Throwable) {
+            Log.e(TAG, "error while loading in RemoteMediator", cause)
+            when(cause) {
+                is IOException -> {
+                    MediatorResult.Error(PhotosRepositoryException.NetworkException(cause))
+                }
+                is HttpException -> {
+                    MediatorResult.Error(
+                        PhotosRepositoryException.HttpException(cause.code(), cause.message(), cause
+                        )
+                    )
+                }
+                else -> {
+                    MediatorResult.Error(PhotosRepositoryException.UnknownException(cause))
+                }
+            }
         }
     }
+
+    // it is a fancy freshness check to avoid loading same photos withing 24 hours
+    // in real case I may need to consider the content expiry or similar header or
+    // other meta data to ensure freshness and reload the content if necessary.
+    private fun isFresh(): Boolean =
+        repoData.getLastModifierMillis()?.let { lastModifiedMillis ->
+            System.currentTimeMillis() - lastModifiedMillis < 86400000 // 24 hours
+        } ?: false
 }
