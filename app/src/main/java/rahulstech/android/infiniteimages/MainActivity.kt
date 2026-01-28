@@ -20,13 +20,13 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -61,7 +61,7 @@ class MainViewModel(app: Application): AndroidViewModel(app) {
 
     val photos = repo.getPhotos().cachedIn(viewModelScope)
 
-    fun refresh() {
+    fun reset() {
         viewModelScope.launch {
             repo.reset()
         }
@@ -96,19 +96,41 @@ class MainActivity : ComponentActivity() {
 fun PhotosScreen(viewModel: MainViewModel) {
     val photos = viewModel.photos.collectAsLazyPagingItems()
 
-    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        when (photos.loadState.refresh) {
-            is LoadState.Loading -> {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    CircularProgressIndicator()
+    val isRefreshing = photos.loadState.refresh is LoadState.Loading
 
-                    Spacer(modifier = Modifier.width(12.dp))
+    PullToRefreshBox(
+        isRefreshing = isRefreshing,
+        onRefresh = {
+            viewModel.reset()
+            photos.refresh()
+        },
+        modifier = Modifier.fillMaxSize(),
+        contentAlignment = Alignment.Center
+    ) {
 
-                    Text("Loading initial images", style = MaterialTheme.typography.bodyLarge)
+        when {
+            photos.loadState.refresh is LoadState.Error && photos.itemCount == 0 -> {
+                PhotosGridError(onRetry = { photos.refresh() })
+            }
+
+            else -> {
+                // Always keep grid in composition
+                PhotosGrid(photos)
+
+                // First load overlay only
+                if (photos.itemCount == 0 && isRefreshing) {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            CircularProgressIndicator()
+                            Spacer(Modifier.width(12.dp))
+                            Text("Loading initial images")
+                        }
+                    }
                 }
             }
-            is LoadState.Error -> PhotosGridError(onRetry = { photos.retry() })
-            is LoadState.NotLoading -> PhotosGrid(photos)
         }
     }
 }
@@ -122,7 +144,7 @@ fun PhotosGrid(photos: LazyPagingItems<Photo>) {
     ) {
         items(
             count = photos.itemCount,
-            key = { index -> photos[index]?.id ?: index }
+            key = { index -> photos[index]?.id as Any } // don't use index as key; if item at index is null then return null as key
         ) { index ->
             photos[index]?.let { PhotoGridItem(it) }
         }

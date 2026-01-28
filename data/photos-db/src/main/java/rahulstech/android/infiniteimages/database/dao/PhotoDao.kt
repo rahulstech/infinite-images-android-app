@@ -14,7 +14,7 @@ interface PhotoDao {
     @Insert
     suspend fun insertPhotos(photos: List<PhotoEntity>)
 
-    @Query("SELECT * FROM `photos`")
+    @Query("SELECT * FROM `photos` ORDER BY `id` ASC") // it's better to use a consistent ordering
     fun getPhotos(): PagingSource<Int, PhotoEntity>
 
     @Transaction
