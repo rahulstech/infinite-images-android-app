@@ -1,13 +1,15 @@
 <div align="center">
 <img src="./infinite_images.png"  alt="Infinite Images" width="200" height="200" />
-</div>
+
  
 # Infinite Images
 
-> Browse a massive, ever-growing collection of high-quality photos powered by the **Unsplash API** — with seamless infinite scrolling, offline-first data delivery, and a smart freshness system.
+Browse a massive, ever-growing collection of high-quality photos powered by the **Unsplash API** — with seamless infinite scrolling, offline-first data delivery, and a smart freshness system.
 
-<!-- SCREENSHOT PLACEHOLDER — replace with your actual demo GIF or banner -->
-![[App Demo](infinite_images.png)]()
+
+[![App Demo](https://img.youtube.com/vi/vDuofUjCTDA/0.jpg)](https://youtube.com/shorts/vDuofUjCTDA)
+
+</div>
 
 ---
 
