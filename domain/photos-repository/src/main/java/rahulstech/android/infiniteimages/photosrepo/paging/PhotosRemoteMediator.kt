@@ -15,13 +15,17 @@ import rahulstech.android.infiniteimages.photosrepo.model.toPhotoEntity
 import retrofit2.HttpException
 import java.io.IOException
 
-private const val  TAG = "PhotosRemoteMediator"
-
 class PhotosRemoteMediator(
     private val db: PhotosDB,
     private val service: UnsplashService,
     private val repoData: RepositoryData
 ) : RemoteMediator<Int, PhotoEntity>() {
+
+    companion object {
+        private const val TAG = "PhotosRemoteMediator"
+
+        private const val ITEMS_PER_PAGE = 20
+    }
 
     private val photosDao = db.photoDao
     private val photoKeysDao = db.photoRemoteKeyDao
@@ -31,60 +35,75 @@ class PhotosRemoteMediator(
         state: PagingState<Int, PhotoEntity>
     ): MediatorResult {
 
-        val page = when (loadType) {
+        return when (loadType) {
 
-            LoadType.REFRESH -> {
+            LoadType.REFRESH -> handleRefresh()
 
-                if (isFresh()) {
-                    Log.i(TAG, "db content is fresh")
-                    return MediatorResult.Success(false)
-                }
-
-                state.anchorPosition?.let { position ->
-                    state.closestItemToPosition(position)?.let { item ->
-                        photoKeysDao.getKeyById(item.globalId)
-                    }
-                }?.nextPage?.minus(1) ?: 1
-
-            }
-
-            LoadType.APPEND -> {
-                val lastItem = state.lastItemOrNull()
-                    ?: return MediatorResult.Success(endOfPaginationReached = false)
-
-                val remoteKey = photoKeysDao.getKeyById(lastItem.globalId)
-                    ?: return MediatorResult.Success(endOfPaginationReached = false)
-
-                remoteKey.nextPage
-                    ?: return MediatorResult.Success(endOfPaginationReached = true)
-            }
+            LoadType.APPEND -> handleAppend(state)
 
             LoadType.PREPEND -> {
                 // We never load backwards.
                 return MediatorResult.Success(endOfPaginationReached = true)
             }
         }
+    }
 
-        Log.i(TAG, "loadType $loadType pageIndex $page")
 
+    private suspend fun handleRefresh(): MediatorResult {
+        if (isFresh()) {
+            Log.i(TAG, "db content is fresh")
+            return MediatorResult.Success(false)
+        }
+
+        return loadPages(1, true)
+    }
+
+    private suspend fun handleAppend(state: PagingState<Int, PhotoEntity>): MediatorResult {
+        val lastItem = state.lastItemOrNull()
+            ?: return MediatorResult.Success(endOfPaginationReached = false)
+
+        val remoteKey = photoKeysDao.getKeyById(lastItem.globalId)
+            ?: return MediatorResult.Success(endOfPaginationReached = false)
+
+        val nextPage = remoteKey.nextPage
+            ?: return MediatorResult.Success(endOfPaginationReached = true)
+
+        return loadPages(nextPage)
+    }
+
+    private suspend fun loadPages(
+        startPage: Int,
+        clearExisting: Boolean = false
+    ): MediatorResult {
         return try {
-            val response = service.getPhotos(page,20)
+
+            var endOfPaginationReached: Boolean
+
+            val page = startPage
+            val response = service.getPhotos(page, ITEMS_PER_PAGE)
 
             if (!response.isSuccessful) {
                 throw HttpException(response)
             }
 
             val networkPhotos = response.body().orEmpty()
-            val endOfPaginationReached = networkPhotos.isEmpty()
+            endOfPaginationReached = networkPhotos.size < ITEMS_PER_PAGE
 
             db.withTransaction {
 
-                if (loadType == LoadType.REFRESH) {
+                if (clearExisting) {
                     photoKeysDao.deleteAllKeys()
                     photosDao.deleteAllPhotos()
                 }
 
-                Log.i(TAG, "add ${networkPhotos.size} photos to db and endOfPaginationReached = $endOfPaginationReached")
+                Log.i(
+                    TAG,
+                    "add ${networkPhotos.size} photos to db and endOfPaginationReached = $endOfPaginationReached"
+                )
+
+                if (networkPhotos.isEmpty()) {
+                    return@withTransaction
+                }
 
                 val entities = networkPhotos.map { it.toPhotoEntity() }
 

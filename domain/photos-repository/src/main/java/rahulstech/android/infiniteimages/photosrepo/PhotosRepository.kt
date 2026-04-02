@@ -17,6 +17,10 @@ import rahulstech.android.infiniteimages.photosrepo.paging.PhotosRemoteMediator
 
 class PhotosRepository(context: Context) {
 
+    companion object {
+        private const val PAGE_ITEM_COUNT = 20
+    }
+
     private val db: PhotosDB = PhotosDB.getInstance(context)
 
     private val service: UnsplashService = UnsplashClient().service
@@ -26,16 +30,16 @@ class PhotosRepository(context: Context) {
     fun getPhotos(): Flow<PagingData<Photo>> {
         return Pager(
             config = PagingConfig(
-                pageSize = 20,
+                pageSize = PAGE_ITEM_COUNT,
 
                 // initially load photos of size initialLoadSize or its multiple
                 // without this value it may trigger multiple requests on initial load
-                initialLoadSize = 20,
+                initialLoadSize = PAGE_ITEM_COUNT, // 3 pages
 
-                // default is pageSize, use smaller that pageSize
-                prefetchDistance = 2,
+                // default is pageSize, use smaller than pageSize
+                prefetchDistance = 10,
 
-                enablePlaceholders = false
+                enablePlaceholders = true
             ),
             remoteMediator = PhotosRemoteMediator(db, service, repoData),
             pagingSourceFactory = { db.photoDao.getPhotos() }
