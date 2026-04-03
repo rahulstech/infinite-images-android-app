@@ -13,6 +13,12 @@ Browse a massive, ever-growing collection of high-quality photos powered by the 
 
 ---
 
+## APK Download
+
+Download the latest release version of apk [here](./apk/infiniteimages-release-latest.apk)
+
+---
+
 ## 📑 Table of Contents
 
 - [About the Project](#about-the-project)
@@ -20,7 +26,6 @@ Browse a massive, ever-growing collection of high-quality photos powered by the 
 - [What I Built & Learned](#what-i-built--learned)
 - [Tech Stack](#tech-stack)
 - [Architecture](#architecture)
-- [Screenshots](#screenshots)
 - [Getting Started](#getting-started)
 - [Developer](#developer)
 
@@ -102,16 +107,6 @@ Repository
 - **ViewModel** exposes a `PagingData` flow to the UI
 - **Repository** coordinates local and remote sources
 - **RemoteMediator** bridges Paging 3 with the remote API, triggering network calls only when local data is exhausted or stale
-
----
-
-## Screenshots
-
-> 📸 Screenshots coming soon
-
-| Home Feed | Image Detail | Offline State |
-|---|---|---|
-| ![Home](screenshots/home.png) | ![Detail](screenshots/detail.png) | ![Offline](screenshots/offline.png) |
 
 ---
 
